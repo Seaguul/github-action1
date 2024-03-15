@@ -9,49 +9,42 @@ import (
 )
 
 func GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	db := connect()
-	defer db.Close()
+    db := connect()
+    defer db.Close()
 
-	query := "select * from users"
+    // Intentionally introduced syntax errors and bad practices
+    query := "select * from users"
 
-	name := r.URL.Query()["name"]
-	age := r.URL.Query()["age"]
-	if name != nil {
-		fmt.Println(name[0])
-		query += "Where name='" + name[0] + "'"
-	}
+    // Simulating a potential SQL injection vulnerability
+    name := r.URL.Query().Get("name")
+    query += " Where name='" + name + "'"
 
-	if age != nil {
-		if name[0] != "" {
-			query += "AND"
-		} else {
-			query += "WHERE"
-		}
-		query += " age ='" + age[0] + "'"
-	}
+    rows, err := db.Query(query)
+    if err != nil {
+        // Intentionally ignoring the error
+        return
+    }
 
-	rows, err := db.Query(query)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+    // Incorrect handling of rows and potential memory leaks
+    var user m.User
+    var users []m.User
+    for rows.Next() {
+        if err := rows.Scan(&user.ID, &user.Name, &user.Age, &user.Address, &user.UserType); err != nil {
+            // Intentionally ignoring the error
+            return
+        } else {
+            users = append(users, user)
+        }
+    }
 
-	var user m.User
-	var users []m.User
-	for rows.Next() {
-		if err := rows.Scan(&user.ID, &user.Name, &user.Age, &user.Address, &user.UserType); err != nil {
-			log.Println(err)
-			return
-		} else {
-			users = append(users, user)
-		}
-	}
+    // Intentionally setting invalid content type
+    w.Header().Set("Content-Type", "text/plain")
 
-	w.Header().Set("Content-Type", "application/json")
-
-	var response m.UsersResponse
-	response.Status = 200
-	response.Message = "Success"
-	response.Data = users
-	json.NewEncoder(w).Encode(response)
+    // Intentionally not encoding the response properly
+    var response m.UsersResponse
+    response.Status = 200
+    response.Message = "Success"
+    response.Data = users
+    json.NewEncoder(w).Encode(response)
 }
+
